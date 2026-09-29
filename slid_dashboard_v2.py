@@ -24,28 +24,35 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ── Colour Palette: Sierra Leone Flag (Green, White, Blue) ──
+# ── Colour Palette ──────────────────────────────────────────
 P = {
-    "green"  : "#1B5E20",
-    "lgreen" : "#2E7D32",
-    "mgreen" : "#388E3C",
-    "tgreen" : "#4CAF50",
-    "blue"   : "#0D47A1",
-    "lblue"  : "#1565C0",
-    "mblue"  : "#1976D2",
-    "tblue"  : "#42A5F5",
-    "white"  : "#FFFFFF",
-    "offwhite": "#F8F9FA",
-    "lgray"  : "#ECEFF1",
-    "mgray"  : "#CFD8DC",
-    "dgray"  : "#546E7A",
-    "dark"   : "#102027",
-    "card"   : "#FAFAFA",
-    "border" : "#B0BEC5",
-    "red"    : "#C62828",
-    "gold"   : "#F9A825",
-    "text"   : "#102027",
-    "sub"    : "#37474F",
+    # Sierra Leone flag colours
+    "green"   : "#1B5E20",
+    "lgreen"  : "#2E7D32",
+    "mgreen"  : "#388E3C",
+    "tgreen"  : "#66BB6A",
+    "blue"    : "#0D47A1",
+    "lblue"   : "#1565C0",
+    "mblue"   : "#1976D2",
+    "tblue"   : "#42A5F5",
+    # UI
+    "sidebar" : "#1a2744",   # professional deep navy
+    "header"  : "#1a2744",
+    "white"   : "#FFFFFF",
+    "offwhite": "#F5F7FA",
+    "lgray"   : "#EEF1F5",
+    "mgray"   : "#C5D0DE",
+    "dgray"   : "#5A6A7E",
+    "dark"    : "#0F1C2E",
+    "card"    : "#FFFFFF",
+    "border"  : "#D4DCE8",
+    "red"     : "#C62828",
+    "gold"    : "#F59F00",
+    "text"    : "#0F1C2E",
+    "sub"     : "#4A5568",
+    # Chart bg
+    "chart_bg": "rgba(0,0,0,0)",
+    "grid"    : "#E8EDF3",
 }
 
 COLORS = [P["lgreen"], P["lblue"], P["tgreen"], P["tblue"],
@@ -91,30 +98,34 @@ st.markdown(f"""
 
 html, body, [class*="css"] {{
   font-family: 'Inter', sans-serif;
-  background: {P['offwhite']};
+  background: #F5F7FA;
   color: {P['text']};
 }}
 
 /* Sidebar */
 section[data-testid="stSidebar"] {{
-  background: {P['green']};
-  border-right: 3px solid {P['lgreen']};
+  background: {P['sidebar']};
+  border-right: none;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.15);
 }}
 section[data-testid="stSidebar"] * {{
   color: {P['white']} !important;
 }}
 section[data-testid="stSidebar"] .stRadio label {{
-  color: {P['white']} !important;
-  font-size: 0.85rem !important;
+  color: rgba(255,255,255,0.85) !important;
+  font-size: 0.84rem !important;
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s;
 }}
 section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {{
-  background: rgba(255,255,255,0.15);
-  border-radius: 6px;
+  background: rgba(255,255,255,0.1);
+  color: white !important;
 }}
 
 /* Main header */
 .main-header {{
-  background: linear-gradient(135deg, {P['green']}, {P['lblue']});
+  background: linear-gradient(135deg, {P['sidebar']}, {P['lblue']});
   border-radius: 10px;
   padding: 1.1rem 1.5rem;
   margin-bottom: 1.2rem;
@@ -147,15 +158,16 @@ section[data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {{
 .kpi.g {{ border-top-color: {P['gold']}; }}
 .kpi.m {{ border-top-color: {P['mblue']}; }}
 .kv {{
-  font-size: 1.8rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: {P['lgreen']};
   margin: 0;
-  line-height: 1;
+  line-height: 1.1;
 }}
 .kv.b {{ color: {P['lblue']}; }}
 .kv.r {{ color: {P['red']}; }}
 .kv.g {{ color: {P['gold']}; }}
+.kv.m {{ color: {P['mblue']}; }}
 .kl {{
   font-size: 0.7rem;
   color: {P['dgray']};
@@ -288,26 +300,41 @@ if not st.session_state["auth"]:
     st.stop()
 
 # ── Chart theme helper ───────────────────────────────────────
-def L(fig, h=360, legend_h=False, show_legend=True):
+def L(fig, h=380, legend_h=False, show_legend=True):
     kw = dict(
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor=P["offwhite"],
+        plot_bgcolor="rgba(255,255,255,0.85)",
         height=h,
         font=dict(family="Inter", color=P["sub"], size=11),
-        margin=dict(l=0, r=0, t=28, b=0),
+        margin=dict(l=10, r=10, t=36, b=10),
         showlegend=show_legend,
+        hovermode="x unified",
     )
     if show_legend:
-        leg = dict(bgcolor="rgba(0,0,0,0)",
-                   font=dict(color=P["sub"]))
+        leg = dict(
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor=P["border"],
+            borderwidth=1,
+            font=dict(color=P["sub"], size=11))
         if legend_h:
-            leg.update(orientation="h", y=1.1)
+            leg.update(orientation="h", y=1.08,
+                       x=0, xanchor="left")
         kw["legend"] = leg
     fig.update_layout(**kw)
-    fig.update_xaxes(gridcolor=P["mgray"], linecolor=P["border"],
-                     tickfont=dict(color=P["sub"]))
-    fig.update_yaxes(gridcolor=P["mgray"], linecolor=P["border"],
-                     tickfont=dict(color=P["sub"]))
+    fig.update_xaxes(
+        gridcolor=P["grid"],
+        linecolor=P["border"],
+        linewidth=1,
+        tickfont=dict(color=P["sub"], size=10),
+        showgrid=True,
+        zeroline=False)
+    fig.update_yaxes(
+        gridcolor=P["grid"],
+        linecolor=P["border"],
+        linewidth=1,
+        tickfont=dict(color=P["sub"], size=10),
+        showgrid=True,
+        zeroline=False)
     return fig
 
 def kpi(label, val, t="", rv=""):
@@ -496,13 +523,24 @@ with st.sidebar:
     ], label_visibility="collapsed")
 
     st.divider()
-    st.markdown(
-        f'<p style="font-size:0.65rem;'
-        f'color:rgba(255,255,255,0.6);text-align:center;">'
-        f'Data: Jan-Aug 2026<br>'
-        f'Residency: 11,118 records<br>'
-        f'Passport: Jan-Jul 2026</p>',
-        unsafe_allow_html=True)
+    st.markdown(f"""
+    <div style="text-align:center;padding:0.3rem 0;">
+      <p style="font-size:0.68rem;color:rgba(255,255,255,0.55);
+        margin:0 0 0.5rem;">
+        Data: Jan-Aug 2026<br>
+        Residency: 11,118 records<br>
+        Passport: Jan-Jul 2026</p>
+      <div style="border-top:1px solid rgba(255,255,255,0.15);
+        padding-top:0.6rem;margin-top:0.3rem;">
+        <p style="font-size:0.72rem;font-weight:600;
+          color:rgba(255,255,255,0.8);margin:0;">
+          Millicent Iye Koiwa</p>
+        <p style="font-size:0.63rem;
+          color:rgba(255,255,255,0.45);margin:0.1rem 0 0;">
+          MSc Business Analytics | AUB 2026<br>
+          Mastercard Foundation Scholar</p>
+      </div>
+    </div>""", unsafe_allow_html=True)
     st.divider()
     if st.button("Sign Out", use_container_width=True):
         st.session_state["auth"] = False
@@ -561,21 +599,27 @@ if page == "Overview":
             x=fpp["MF"], y=fpp["Tot"],
             name="Passport",
             mode="lines+markers",
-            line=dict(color=P["lgreen"],width=2.5),
-            marker=dict(size=7),
+            line=dict(color=P["lgreen"],width=2.5,
+                      shape="spline",smoothing=0.6),
+            marker=dict(size=9,color=P["lgreen"],
+                        line=dict(color="white",width=2)),
             fill="tozeroy",
-            fillcolor="rgba(46,125,50,0.08)"))
+            fillcolor="rgba(46,125,50,0.08)",
+            hovertemplate="<b>Passport</b><br>%{x}: %{y:,}<extra></extra>"))
         fig.add_trace(go.Scatter(
             x=rp_m["Month"], y=rp_m["Apps"],
             name="Residency Permit",
             mode="lines+markers",
-            line=dict(color=P["lblue"],width=2.5),
-            marker=dict(size=7),
+            line=dict(color=P["lblue"],width=2.5,
+                      shape="spline",smoothing=0.6),
+            marker=dict(size=9,color=P["lblue"],
+                        line=dict(color="white",width=2)),
             fill="tozeroy",
-            fillcolor="rgba(21,101,192,0.08)"))
-        L(fig, 360, True)
+            fillcolor="rgba(21,101,192,0.08)",
+            hovertemplate="<b>Residency Permit</b><br>%{x}: %{y:,}<extra></extra>"))
+        L(fig, 380, True)
         fig.update_xaxes(title_text="Month")
-        fig.update_yaxes(title_text="Volume")
+        fig.update_yaxes(title_text="Volume", tickformat=",")
         st.plotly_chart(fig, use_container_width=True)
         ins("Passport volumes consistently exceed permit applications, reflecting broader citizen demand for travel documents versus foreign national residency needs.")
 
@@ -588,13 +632,20 @@ if page == "Overview":
         fig2.add_trace(go.Bar(
             x=fpp["MF"], y=fpp["Rev"],
             name="Passport",
-            marker_color=P["lgreen"], opacity=0.85))
+            marker_color=P["lgreen"],
+            marker_line=dict(color="white",width=0.5),
+            opacity=0.88,
+            hovertemplate="<b>Passport</b><br>%{x}: $%{y:,.0f}<extra></extra>"))
         fig2.add_trace(go.Bar(
             x=rp_r["Month"], y=rp_r["Rev"],
             name="Residency Permit",
-            marker_color=P["lblue"], opacity=0.85))
-        L(fig2, 360, True)
-        fig2.update_layout(barmode="group")
+            marker_color=P["lblue"],
+            marker_line=dict(color="white",width=0.5),
+            opacity=0.88,
+            hovertemplate="<b>Residency Permit</b><br>%{x}: $%{y:,.0f}<extra></extra>"))
+        L(fig2, 380, True)
+        fig2.update_layout(barmode="group",
+            bargap=0.2, bargroupgap=0.05)
         fig2.update_yaxes(tickformat="$,.0f",
                           title_text="Revenue (USD)")
         st.plotly_chart(fig2, use_container_width=True)
@@ -674,10 +725,17 @@ elif page == "Passport Analysis":
             fig.add_trace(go.Scatter(
                 x=fpp2["MF"], y=fpp2[col], name=nm,
                 mode="lines+markers",
-                line=dict(color=clr,width=2.5),
-                marker=dict(size=8,color=clr)))
-        L(fig, 360, True)
-        fig.update_yaxes(title_text="Passports Produced")
+                line=dict(color=clr, width=2.5,
+                          shape="spline", smoothing=0.6),
+                marker=dict(size=9, color=clr,
+                            line=dict(color="white",width=2)),
+                hovertemplate=(
+                    f"<b>{nm}</b><br>"
+                    "%{x}: %{y:,}<extra></extra>")))
+        L(fig, 380, True)
+        fig.update_yaxes(title_text="Passports Produced",
+                         tickformat=",")
+        fig.update_xaxes(title_text="Month")
         st.plotly_chart(fig, use_container_width=True)
         wrn("Service passport production dropped 96% between March (108) and May (7). The cause remains unconfirmed by SLID and requires investigation.")
 
@@ -819,8 +877,11 @@ elif page == "Residency Permit Analysis":
             x=m3["Month"], y=m3["Rev"],
             name="Revenue ($)",
             mode="lines+markers",
-            line=dict(color=P["lgreen"],width=2.5),
-            marker=dict(size=8,color=P["lgreen"])),
+            line=dict(color=P["lgreen"],width=2.5,
+                      shape="spline",smoothing=0.6),
+            marker=dict(size=9,color=P["lgreen"],
+                        line=dict(color="white",width=2)),
+            hovertemplate="<b>Revenue</b><br>%{x}: $%{y:,.0f}<extra></extra>"),
             secondary_y=True)
         L(fig,340,True)
         fig.update_layout(barmode="relative")
@@ -1302,9 +1363,12 @@ elif page == "Process Performance":
             fig.add_trace(go.Scatter(
                 x=list(demands.keys()),y=Wv,
                 mode="lines+markers",name=lb,
-                line=dict(color=col,width=2.5),
-                marker=dict(size=8,color=col),
-                connectgaps=False))
+                line=dict(color=col,width=2.5,
+                          shape="spline",smoothing=0.5),
+                marker=dict(size=9,color=col,
+                            line=dict(color="white",width=2)),
+                connectgaps=False,
+                hovertemplate=f"<b>{lb}</b><br>%{{x}}: %{{y:.3f}} days<extra></extra>"))
         fig.add_hline(y=1.0,line_dash="dash",
                       line_color=P["lblue"],
                       annotation_text="1-day target",
@@ -1406,16 +1470,22 @@ elif page == "Revenue Forecast":
         fig.add_trace(go.Scatter(
             x=rm["Month"],y=rm["Revenue"],
             name="Actual",mode="lines+markers",
-            line=dict(color=P["lgreen"],width=2.5),
-            marker=dict(size=8,color=P["lgreen"])))
+            line=dict(color=P["lgreen"],width=2.5,
+                      shape="spline",smoothing=0.6),
+            marker=dict(size=9,color=P["lgreen"],
+                        line=dict(color="white",width=2)),
+            hovertemplate="<b>Actual</b><br>%{x}: $%{y:,.0f}<extra></extra>"))
         fig.add_trace(go.Scatter(
             x=fut["Month"],y=fut["Fc"],
             name="OLS Forecast",
             mode="lines+markers",
             line=dict(color=P["lblue"],
-                      width=2,dash="dash"),
-            marker=dict(size=8,symbol="diamond",
-                        color=P["lblue"])))
+                      width=2.5,dash="dash",
+                      shape="spline",smoothing=0.6),
+            marker=dict(size=9,symbol="diamond",
+                        color=P["lblue"],
+                        line=dict(color="white",width=2)),
+            hovertemplate="<b>Forecast</b><br>%{x}: $%{y:,.0f}<extra></extra>"))
         fig.add_trace(go.Scatter(
             x=list(fut["Month"])+
               list(fut["Month"][::-1]),
@@ -1448,8 +1518,11 @@ elif page == "Revenue Forecast":
         fig2.add_trace(go.Scatter(
             x=pp["MF"],y=pp["Rev"],
             name="Actual",mode="lines+markers",
-            line=dict(color=P["lgreen"],width=2.5),
-            marker=dict(size=8,color=P["lgreen"])))
+            line=dict(color=P["lgreen"],width=2.5,
+                      shape="spline",smoothing=0.6),
+            marker=dict(size=9,color=P["lgreen"],
+                        line=dict(color="white",width=2)),
+            hovertemplate="<b>Actual</b><br>%{x}: $%{y:,.0f}<extra></extra>"))
         for lb,col,dsh in [
             ("Optimistic",  P["lblue"], "dashdot"),
             ("Midpoint",    P["lgreen"],"dash"),
@@ -1458,10 +1531,11 @@ elif page == "Revenue Forecast":
             fig2.add_trace(go.Scatter(
                 x=pf["Month"],y=pf[lb],name=lb,
                 mode="lines+markers",
-                line=dict(color=col,
-                          width=2,dash=dsh),
+                line=dict(color=col,width=2,dash=dsh),
                 marker=dict(size=8,symbol="diamond",
-                            color=col)))
+                            color=col,
+                            line=dict(color="white",width=1.5)),
+                hovertemplate=f"<b>{lb}</b><br>%{{x}}: $%{{y:,.0f}}<extra></extra>"))
         L(fig2,400,True)
         fig2.update_yaxes(tickformat="$,.0f",
                           title_text="Revenue ($)")
