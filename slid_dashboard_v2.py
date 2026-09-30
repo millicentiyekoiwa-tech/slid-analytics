@@ -1439,6 +1439,346 @@ elif page == "Process Performance":
                  use_container_width=True,
                  hide_index=True)
 
+    st.divider()
+
+    # ── MONTE CARLO SIMULATION ────────────────────────────
+    sec("Monte Carlo Simulation: Processing Time Under Uncertainty")
+    st.markdown(
+        f'<p style="font-size:0.82rem;color:{P["sub"]};">' +
+        "Simulates 10,000 demand scenarios by varying arrival rate, "+
+        "service rate, and no-show rate simultaneously. "+
+        "Each scenario produces a processing time outcome. "+
+        "The distribution of outcomes quantifies the probability "+
+        "of meeting service targets under real-world variability.</p>",
+        unsafe_allow_html=True)
+
+    st.markdown("")
+    mc_c1, mc_c2 = st.columns(2)
+
+    with mc_c1:
+        sec("Part 1: Residency Permit (Single Office, Freetown)")
+        st.markdown(
+            f'<p style="font-size:0.78rem;color:{P["sub"]};">' +
+            "Adjust staffing configuration and run the simulation "+
+            "to see the full probability distribution of "+
+            "processing times.</p>",
+            unsafe_allow_html=True)
+
+        rp_s  = st.slider("Number of Officers (s)",
+                          2, 15, 8, 1, key="mc_s")
+        rp_mu = st.slider("Service Rate per Officer (mu)",
+                          3, 20, 12, 1, key="mc_mu")
+        n_sim = 10000
+
+        if st.button("Run Simulation",
+                     use_container_width=True,
+                     key="run_mc"):
+            np.random.seed(42)
+
+            # Stochastic inputs
+            # Lambda: triangular distribution
+            # Min=11.62 (Jan), Mode=50.77 (avg),
+            # Max=87.80 (Jun peak)
+            lam_sim = np.random.triangular(
+                11.62, 50.77, 87.80, n_sim)
+
+            # Mu: normal around set value ±15%
+            mu_sim = np.random.normal(
+                rp_mu, rp_mu*0.15, n_sim)
+            mu_sim = np.clip(mu_sim, 1, 50)
+
+            # No-show: beta distribution
+            # mean ~20% no-show rate for biometrics
+            noshows = np.random.beta(2, 8, n_sim)
+
+            # Effective lambda after no-shows
+            # (no-shows reduce effective demand
+            # but payment already made)
+            lam_eff = lam_sim * (1 - noshows * 0.3)
+
+            # Calculate W for each scenario
+            W_results   = []
+            stable_count = 0
+            for i in range(n_sim):
+                r = mms(lam_eff[i], mu_sim[i], rp_s)
+                if r["stable"]:
+                    W_results.append(r["W"])
+                    stable_count += 1
+                else:
+                    W_results.append(np.nan)
+
+            W_arr    = np.array(W_results)
+            W_valid  = W_arr[~np.isnan(W_arr)]
+            collapse = n_sim - stable_count
+
+            # KPIs
+            k1,k2,k3,k4 = st.columns(4)
+            p90 = np.percentile(W_valid, 90) if len(W_valid)>0 else 0
+            med = np.median(W_valid) if len(W_valid)>0 else 0
+            pct_target = (np.sum(W_valid<=1.0)/
+                          len(W_valid)*100) if len(W_valid)>0 else 0
+            col_pct = collapse/n_sim*100
+
+            with k1: kpi("Median W",
+                f"{med:.3f}d","")
+            with k2: kpi("90th Percentile",
+                f"{p90:.3f}d",
+                "r" if p90>1 else "")
+            with k3: kpi("Within 1-Day Target",
+                f"{pct_target:.1f}%",
+                "" if pct_target>80 else "r")
+            with k4: kpi("System Collapse Rate",
+                f"{col_pct:.1f}%",
+                "r" if col_pct>20 else "")
+
+            st.markdown("")
+
+            # Histogram
+            if len(W_valid) > 0:
+                fig_mc = go.Figure()
+                fig_mc.add_trace(go.Histogram(
+                    x=W_valid,
+                    nbinsx=60,
+                    name="Processing Time",
+                    marker_color=P["lblue"],
+                    opacity=0.85,
+                    hovertemplate=(
+                        "Processing time: %{x:.3f} days<br>"
+                        "Count: %{y}<extra></extra>")))
+
+                # Add percentile lines
+                for pct_val, pct_name, col in [
+                    (np.percentile(W_valid,50),
+                     "Median", P["lgreen"]),
+                    (np.percentile(W_valid,90),
+                     "90th %ile", P["gold"]),
+                    (np.percentile(W_valid,95),
+                     "95th %ile", P["red"]),
+                ]:
+                    fig_mc.add_vline(
+                        x=pct_val,
+                        line_dash="dash",
+                        line_color=col,
+                        line_width=2,
+                        annotation_text=f"{pct_name}: {pct_val:.3f}d",
+                        annotation_font_color=col,
+                        annotation_position="top right")
+
+                # 1-day target line
+                fig_mc.add_vline(
+                    x=1.0,
+                    line_dash="solid",
+                    line_color=P["red"],
+                    line_width=2.5,
+                    annotation_text="1-day target",
+                    annotation_font_color=P["red"])
+
+                L(fig_mc, 340, show_legend=False)
+                fig_mc.update_xaxes(
+                    title_text="Processing Time (days)",
+                    range=[0, min(W_valid.max()*1.1, 5)])
+                fig_mc.update_yaxes(
+                    title_text="Number of Scenarios")
+                fig_mc.update_layout(
+                    title=dict(
+                        text=f"Processing Time Distribution | s={rp_s}, mu={rp_mu} | n=10,000 scenarios",
+                        font=dict(size=12,color=P["sub"])))
+                st.plotly_chart(fig_mc,
+                                use_container_width=True)
+
+                if col_pct > 0:
+                    wrn(f"{collapse:,} of 10,000 scenarios resulted in system collapse (utilisation above 100%). These represent demand peaks where the system queue grows indefinitely.")
+                if pct_target > 90:
+                    ins(f"With {rp_s} officers at mu={rp_mu}, the system processes within the 1-day internal target in {pct_target:.1f}% of simulated scenarios.")
+                else:
+                    wrn(f"With {rp_s} officers at mu={rp_mu}, only {pct_target:.1f}% of scenarios meet the 1-day target. Consider increasing staffing or service rate.")
+            else:
+                st.error("No stable scenarios at this configuration. Increase staffing or service rate.")
+        else:
+            st.info("Set the staffing configuration above and click Run Simulation.")
+
+    with mc_c2:
+        sec("Part 2: Passport Decentralisation Simulation")
+        st.markdown(
+            f'<p style="font-size:0.78rem;color:{P["sub"]};">' +
+            "Simulates the impact of redistributing passport production "+
+            "from Freetown to regional offices. Adjust the volume share "+
+            "each office absorbs and see the staffing implications "+
+            "and processing time outcomes per office.</p>",
+            unsafe_allow_html=True)
+
+        # Current total: 212 passports/day avg
+        total_daily = 212
+
+        ft_share = st.slider(
+            "Freetown share (%)",
+            40, 98, 98, 1, key="ft_share")
+        bo_share = st.slider(
+            "Bo share (%)",
+            1, 30, 1, 1, key="bo_share")
+        kn_share = st.slider(
+            "Kenema share (%)",
+            1, 30, 1, 1, key="kn_share")
+        mk_share = st.slider(
+            "Makeni share (%)",
+            1, 30, 1, 1, key="mk_share")
+
+        total_share = ft_share+bo_share+kn_share+mk_share
+        online_share = max(0, 100-total_share)
+
+        st.caption(
+            f"Online: {online_share}% | "
+            f"Total allocated: {total_share+online_share}%")
+
+        mu_pp = st.slider(
+            "Service Rate per Officer (passports/day)",
+            5, 30, 15, 1, key="mu_pp")
+
+        if st.button("Run Decentralisation Simulation",
+                     use_container_width=True,
+                     key="run_dc"):
+
+            offices_sim = {
+                "Freetown": ft_share/100,
+                "Bo"      : bo_share/100,
+                "Kenema"  : kn_share/100,
+                "Makeni"  : mk_share/100,
+                "Online"  : online_share/100,
+            }
+
+            np.random.seed(42)
+            n_sim2 = 5000
+
+            results = []
+            for office_name, share in offices_sim.items():
+                if share == 0:
+                    continue
+
+                lam_o = total_daily * share
+
+                # Add variability
+                lam_sim2 = np.random.triangular(
+                    lam_o*0.7, lam_o, lam_o*1.4,
+                    n_sim2)
+
+                # Find min officers needed
+                s_needed = max(1,
+                    int(np.ceil(lam_o / mu_pp)) + 1)
+
+                W_o = []
+                for lv in lam_sim2:
+                    r = mms(lv, mu_pp, s_needed)
+                    W_o.append(
+                        r["W"] if r["stable"]
+                        else np.nan)
+                W_o = np.array(W_o)
+                W_valid_o = W_o[~np.isnan(W_o)]
+
+                results.append({
+                    "Office"          : office_name,
+                    "Daily Volume"    : round(lam_o,1),
+                    "Share (%)"       : round(share*100,1),
+                    "Min Officers"    : s_needed,
+                    "Median W (days)" : (
+                        round(np.median(W_valid_o),4)
+                        if len(W_valid_o)>0 else "N/A"),
+                    "P90 W (days)"    : (
+                        round(np.percentile(W_valid_o,90),4)
+                        if len(W_valid_o)>0 else "N/A"),
+                    "Stability"       : (
+                        f"{len(W_valid_o)/n_sim2*100:.1f}%")
+                })
+
+            res_df = pd.DataFrame(results)
+            st.dataframe(res_df,
+                         use_container_width=True,
+                         hide_index=True)
+
+            # Bar chart of volume distribution
+            fig_dc = go.Figure()
+            fig_dc.add_trace(go.Bar(
+                x=res_df["Office"],
+                y=res_df["Daily Volume"],
+                marker_color=[
+                    P["red"]    if o=="Freetown"
+                    else P["lgreen"]
+                    for o in res_df["Office"]],
+                marker_line=dict(
+                    color="white",width=0.5),
+                text=res_df["Share (%)"].astype(str)+"%",
+                textposition="outside",
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "Daily Volume: %{y:.1f}<br>"
+                    "<extra></extra>")))
+            L(fig_dc, 300, show_legend=False)
+            fig_dc.update_yaxes(
+                title_text="Passports/Day")
+            fig_dc.update_xaxes(
+                title_text="Office")
+            st.plotly_chart(fig_dc,
+                            use_container_width=True)
+
+            # Staffing chart
+            fig_st = go.Figure(go.Bar(
+                x=res_df["Office"],
+                y=res_df["Min Officers"],
+                marker_color=P["lblue"],
+                marker_line=dict(
+                    color="white",width=0.5),
+                text=res_df["Min Officers"],
+                textposition="outside",
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "Officers needed: %{y}<extra></extra>")))
+            L(fig_st, 260, show_legend=False)
+            fig_st.update_yaxes(
+                title_text="Officers Required")
+            fig_st.update_layout(
+                title=dict(
+                    text="Minimum Officers Required per Office",
+                    font=dict(size=12,
+                              color=P["sub"])))
+            st.plotly_chart(fig_st,
+                            use_container_width=True)
+
+            total_officers = res_df["Min Officers"].sum()
+            current_officers = 3
+            ins(f"Distributing {100-online_share}% of passport production across physical offices requires approximately {total_officers} officers in total. This compares to the current estimated {current_officers} dedicated passport processing staff in Freetown.")
+
+        else:
+            st.info("Adjust the volume share per office above and click Run Decentralisation Simulation.")
+
+            # Show current state
+            sec("Current State: Freetown Concentration")
+            curr = pd.DataFrame({
+                "Office" :["Freetown","Makeni",
+                           "Kenema","Online","Bo"],
+                "Total"  :[38195,279,170,130,129],
+                "Share"  :["98.18%","0.72%",
+                           "0.44%","0.33%","0.33%"],
+            })
+            fig_curr = go.Figure(go.Bar(
+                x=curr["Office"],
+                y=curr["Total"],
+                marker_color=[
+                    P["red"] if o=="Freetown"
+                    else P["lgreen"]
+                    for o in curr["Office"]],
+                text=curr["Share"],
+                textposition="outside",
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "Passports: %{y:,}<br>"
+                    "<extra></extra>")))
+            L(fig_curr, 300, show_legend=False)
+            fig_curr.update_yaxes(
+                title_text="Passports Produced",
+                tickformat=",")
+            st.plotly_chart(fig_curr,
+                            use_container_width=True)
+            wrn("Freetown handles 98.18% of all passport production. Use the sliders above to simulate a decentralised configuration.")
+
 # ════════════════════════════════════════════════════════════
 # PAGE 6: REVENUE FORECAST
 # ════════════════════════════════════════════════════════════
