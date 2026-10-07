@@ -588,6 +588,79 @@ if page == "Overview":
         tot = fpp["Rev"].sum()+fdf["Amount ($)"].sum()
         kpi("Combined Revenue",f"${tot/1e6:.2f}M","b")
 
+    # ── Strategic Plan KPI Scorecard ─────────────────────────
+    st.markdown("")
+    sec("Strategic Plan Targets — SLID Digital Transformation (Source: SLID Strategic Plan)")
+    st.markdown(f"""
+    <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:0.8rem;">
+
+      <div style="flex:1;min-width:180px;background:{P['white']};border-radius:10px;
+        padding:0.9rem 1rem;border:1px solid {P['border']};
+        border-top:4px solid {P['red']};box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.4rem;font-weight:700;color:{P['red']};">0.33%</div>
+        <div style="font-size:0.68rem;color:{P['dgray']};text-transform:uppercase;
+          letter-spacing:0.05em;margin:0.2rem 0 0.4rem;">Online Applications</div>
+        <div style="font-size:0.72rem;color:{P['sub']};">Target: <b>80%</b> by Year 3</div>
+        <div style="margin-top:0.4rem;height:5px;background:{P['lgray']};border-radius:3px;">
+          <div style="width:0.33%;height:5px;background:{P['red']};border-radius:3px;"></div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:180px;background:{P['white']};border-radius:10px;
+        padding:0.9rem 1rem;border:1px solid {P['border']};
+        border-top:4px solid {P['gold']};box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.4rem;font-weight:700;color:{P['gold']};">74.7%</div>
+        <div style="font-size:0.68rem;color:{P['dgray']};text-transform:uppercase;
+          letter-spacing:0.05em;margin:0.2rem 0 0.4rem;">Permit Delivery Rate</div>
+        <div style="font-size:0.72rem;color:{P['sub']};">Target: <b>100%</b> delivery</div>
+        <div style="margin-top:0.4rem;height:5px;background:{P['lgray']};border-radius:3px;">
+          <div style="width:74.7%;height:5px;background:{P['gold']};border-radius:3px;"></div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:180px;background:{P['white']};border-radius:10px;
+        padding:0.9rem 1rem;border:1px solid {P['border']};
+        border-top:4px solid {P['red']};box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.4rem;font-weight:700;color:{P['red']};">98.2%</div>
+        <div style="font-size:0.68rem;color:{P['dgray']};text-transform:uppercase;
+          letter-spacing:0.05em;margin:0.2rem 0 0.4rem;">Freetown Concentration</div>
+        <div style="font-size:0.72rem;color:{P['sub']};">Target: <b>70% max</b> (decentralise)</div>
+        <div style="margin-top:0.4rem;height:5px;background:{P['lgray']};border-radius:3px;">
+          <div style="width:98.2%;height:5px;background:{P['red']};border-radius:3px;"></div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:180px;background:{P['white']};border-radius:10px;
+        padding:0.9rem 1rem;border:1px solid {P['border']};
+        border-top:4px solid {P['lgreen']};box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.4rem;font-weight:700;color:{P['lgreen']};">Target</div>
+        <div style="font-size:0.68rem;color:{P['dgray']};text-transform:uppercase;
+          letter-spacing:0.05em;margin:0.2rem 0 0.4rem;">System Uptime</div>
+        <div style="font-size:0.72rem;color:{P['sub']};">Target: <b>99.5%</b> (WanGov hosted)</div>
+        <div style="margin-top:0.4rem;height:5px;background:{P['lgray']};border-radius:3px;">
+          <div style="width:60%;height:5px;background:{P['lgreen']};border-radius:3px;"></div>
+        </div>
+      </div>
+
+      <div style="flex:1;min-width:180px;background:{P['white']};border-radius:10px;
+        padding:0.9rem 1rem;border:1px solid {P['border']};
+        border-top:4px solid {P['red']};box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="font-size:1.4rem;font-weight:700;color:{P['red']};">~14 days</div>
+        <div style="font-size:0.68rem;color:{P['dgray']};text-transform:uppercase;
+          letter-spacing:0.05em;margin:0.2rem 0 0.4rem;">Processing Time</div>
+        <div style="font-size:0.72rem;color:{P['sub']};">Target: <b>3 days</b> (TO-BE)</div>
+        <div style="margin-top:0.4rem;height:5px;background:{P['lgray']};border-radius:3px;">
+          <div style="width:21%;height:5px;background:{P['red']};border-radius:3px;"></div>
+        </div>
+      </div>
+
+    </div>
+    <div style="font-size:0.68rem;color:{P['dgray']};margin-bottom:0.6rem;">
+      Source: SLID Digital Transformation Strategic Plan &nbsp;|&nbsp;
+      Progress bar shows % of target achieved. Red = critical gap, Amber = partial, Green = on track.
+    </div>
+    """, unsafe_allow_html=True)
+
     st.markdown("")
     c1, c2 = st.columns(2)
     with c1:
