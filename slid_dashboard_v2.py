@@ -440,12 +440,23 @@ def load_models(_df):
 
         X = data[features]
         y = data["Completion_Binary"]
+        # split BEFORE fitting to avoid data leakage in evaluation metrics
+        X_tr,X_te,y_tr,y_te = train_test_split(
+            X, y, test_size=0.2,
+            stratify=y, random_state=42)
         scaler = StandardScaler()
-        X_sc   = scaler.fit_transform(X)
+        X_tr_sc = scaler.fit_transform(X_tr)
+        X_te_sc = scaler.transform(X_te)
         lr = RandomForestClassifier(
             n_estimators=100, random_state=42,
             class_weight="balanced")
-        lr.fit(X_sc, y)
+        lr.fit(X_tr_sc, y_tr)
+        acc = accuracy_score(y_te, lr.predict(X_te_sc))
+        auc = roc_auc_score(
+            y_te, lr.predict_proba(X_te_sc)[:,1])
+        # refit on full data for deployment
+        X_sc_full = scaler.fit_transform(X)
+        lr.fit(X_sc_full, y)
         meta = {
             "categories"   : sorted(data["Category"].unique().tolist()),
             "process_codes": sorted(
@@ -454,12 +465,6 @@ def load_models(_df):
             "amount_max"   : float(data["Amount ($)"].max()),
             "amount_mean"  : float(data["Amount ($)"].mean()),
         }
-        X_tr,X_te,y_tr,y_te = train_test_split(
-            X_sc, y, test_size=0.2,
-            stratify=y, random_state=42)
-        acc = accuracy_score(y_te, lr.predict(X_te))
-        auc = roc_auc_score(
-            y_te, lr.predict_proba(X_te)[:,1])
         return lr,scaler,le_cat,le_proc,meta,acc,auc,True
     except Exception:
         return None,None,None,None,{},0,0,False
