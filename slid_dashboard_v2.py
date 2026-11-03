@@ -2027,8 +2027,8 @@ elif page == "Predictive Analytics":
 
     st.markdown(
         f'<p style="font-size:0.85rem;color:{P["sub"]};">'
-        f'Logistic regression model trained on 11,118 '
-        f'residency permit records. '
+        f'Random Forest model (100 trees, balanced classes) trained on 11,118 '
+        f'residency permit records with 80/20 holdout evaluation. '
         f'<b style="color:{P["text"]};">'
         f'AUC = {auc_disp} &nbsp;|&nbsp; '
         f'Accuracy = {acc_disp}</b>. '
