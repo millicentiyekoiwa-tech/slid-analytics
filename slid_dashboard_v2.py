@@ -416,7 +416,7 @@ def load_rp():
 @st.cache_resource
 def load_models(_df):
     try:
-        from sklearn.linear_model import LogisticRegression
+        from sklearn.ensemble import RandomForestClassifier
         from sklearn.preprocessing import LabelEncoder, StandardScaler
         from sklearn.model_selection import train_test_split
         from sklearn.metrics import roc_auc_score, accuracy_score
@@ -442,9 +442,9 @@ def load_models(_df):
         y = data["Completion_Binary"]
         scaler = StandardScaler()
         X_sc   = scaler.fit_transform(X)
-        lr = LogisticRegression(
-            max_iter=1000, random_state=42,
-            class_weight="balanced", C=0.1)
+        lr = RandomForestClassifier(
+            n_estimators=100, random_state=42,
+            class_weight="balanced")
         lr.fit(X_sc, y)
         meta = {
             "categories"   : sorted(data["Category"].unique().tolist()),
@@ -2159,21 +2159,18 @@ elif page == "Predictive Analytics":
                 st.plotly_chart(fg,
                                 use_container_width=True)
 
-                sec("Feature Influence on Prediction")
+                sec("Feature Importance (Random Forest)")
                 cdf = pd.DataFrame({
                     "Feature":["Amount ($)","Month",
                                "Day of Week","Category",
                                "Process Code"],
-                    "Coef":lr_.coef_[0]
-                }).sort_values("Coef")
+                    "Coef":lr_.feature_importances_
+                }).sort_values("Coef", ascending=False)
                 fc = go.Figure(go.Bar(
                     x=cdf["Coef"],
                     y=cdf["Feature"],
                     orientation="h",
-                    marker_color=[
-                        P["lgreen"] if v>0
-                        else P["red"]
-                        for v in cdf["Coef"]]))
+                    marker_color=[P["lgreen"] for v in cdf["Coef"]]))
                 fc.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor=P["offwhite"],
@@ -2201,7 +2198,7 @@ elif page == "Predictive Analytics":
                           "Recall (Not Delivered)",
                           "Training Records"],
                 "Value" :[acc_disp,auc_disp,
-                          "~73%","~79%","~8,894"]
+                          "~79%","~77%","~8,894"]
             }), use_container_width=True,
                 hide_index=True)
 
