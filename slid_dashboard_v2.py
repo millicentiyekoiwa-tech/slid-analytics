@@ -2201,7 +2201,7 @@ elif page == "Predictive Analytics":
                           "Recall (Not Delivered)",
                           "Training Records"],
                 "Value" :[acc_disp,auc_disp,
-                          "~93%","~51%","~8,894"]
+                          "~73%","~79%","~8,894"]
             }), use_container_width=True,
                 hide_index=True)
 
